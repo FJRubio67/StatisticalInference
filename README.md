@@ -1,4 +1,4 @@
-# StatisticalInference
+# Statistical Inference
 The pdf file contains my Lecture Notes on Statistical Inference. These notes were developed by Dr. Francisco Javier Rubio. 
 
 Disclaimer: These notes closely follow the material in the textbooks cited in the bibliography, with some additions by the author. 

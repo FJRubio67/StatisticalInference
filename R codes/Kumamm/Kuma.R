@@ -1,0 +1,82 @@
+rm(list = ls()) # Delete memory
+
+#------------------------------------------------------------------
+# Moments of order n of the Kumaraswamy(a,b) distribution
+# https://en.wikipedia.org/wiki/Kumaraswamy_distribution
+#------------------------------------------------------------------
+mn <- function(a,b,n){
+  log.num <- log(b) + lgamma(1 + n/a) + lgamma(b)
+  log.den <- lgamma(1 + b + n/a)
+  return(exp(log.num-log.den))
+}
+
+#--------------------------------
+# Method of Moments Estimates
+#--------------------------------
+library(nleqslv) # Required packages
+
+# Function containing the implementation of the MME
+# It solves a system of nonlinear equations 
+
+MME <- function(data){
+  x.bar <- mean(data)
+  x2.bar <- mean(data^2)
+  
+  fn <- function(par){
+    mom1 <- mn(exp(par[1]),exp(par[2]),1) - x.bar
+    mom2 <- mn(exp(par[1]),exp(par[2]),2) - mn(exp(par[1]),exp(par[2]),1)^2 - x2.bar + x.bar^2
+    return(c(mom1,mom2))
+  }
+  
+  est <- as.vector(exp(nleqslv(c(0,0), fn)$x))
+  
+  return(est)
+  
+}
+
+###############################################################################
+# Examples
+###############################################################################
+
+#--------------------------------
+# Example 1
+#--------------------------------
+a0 <- 1
+b0 <- 1
+ns <- 1000
+
+# Simulation of Kumaraswamy distributed data
+set.seed(123)
+dat <- (rbeta(ns, shape1 = 1, shape2 = b0))^(1/a0)
+
+# MME
+MME(dat)
+
+#--------------------------------
+# Example 2
+#--------------------------------
+a0 <- 0.5
+b0 <- 2
+ns <- 1000
+
+# Simulation of Kumaraswamy distributed data
+set.seed(123)
+dat <- (rbeta(ns, shape1 = 1, shape2 = b0))^(1/a0)
+
+# MME
+MME(dat)
+
+#--------------------------------
+# Example 3
+#--------------------------------
+a0 <- 5
+b0 <- 3
+ns <- 1000
+
+# Simulation of Kumaraswamy distributed data
+set.seed(123)
+dat <- (rbeta(ns, shape1 = 1, shape2 = b0))^(1/a0)
+
+# MME
+MME(dat)
+

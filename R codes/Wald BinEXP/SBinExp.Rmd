@@ -1,0 +1,182 @@
+---
+title: "Second Order Approximation CIs for the Binomial and Exponential distributions"
+author: '[Francisco Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "22 February 2019"
+output: html_document
+---
+
+```{r}
+################################################################################################
+# Wald CI: Binomial case
+################################################################################################
+
+# Example 1
+rm(list = ls())
+
+library(numDeriv)
+
+# Data
+n <- 10
+set.seed(4)
+t <- rbinom(n = 1, size = n, prob = 0.3)
+theta.hat <- t/n
+theta.hat
+
+# Profile likelihood
+Rp <- Vectorize(function(theta)  theta^t*(1-theta)^(n-t)/( theta.hat^t*(1-theta.hat)^(n-t) ))
+
+# Lambda function
+Lambda <-  Vectorize( function(theta) -2*log(Rp(theta)) )
+
+#----------------------------------------
+# Wald approximation function for theta
+#-----------------------------------------
+
+hess.theta <-  hessian(Lambda , x = theta.hat)
+
+# Threshold
+lev <- 2*qchisq(0.95, df = 1)/hess.theta
+lev
+
+W.theta = Vectorize( function(theta) return( (theta-theta.hat)^2 ))
+# Visualising the profile likelihood of sigma
+curve(W.theta,0,1, n = 1000, lwd =3, col = "blue", cex.axis = 2, cex.lab = 1.5, main =  expression(paste("Wald function of ", theta), ylim = c(0,1)),
+      xlab = ~theta, ylab = "Wald")
+abline(h = lev, lwd = 2, col = "red")
+abline(v = theta.hat, lwd = 2, col = "purple", lty = 2)
+
+# 95% Confidence interval
+W.thetaC = Vectorize( function(theta) return(W.theta(theta)-lev))
+
+c(uniroot(W.thetaC,c(0.01,0.4))$root,uniroot(W.thetaC,c(0.4,0.8))$root)
+
+
+
+
+# Example 2
+rm(list = ls())
+
+library(numDeriv)
+
+# Data
+n <- 100
+set.seed(4)
+t <- rbinom(n = 1, size = n, prob = 0.3)
+theta.hat <- t/n
+theta.hat
+
+# Profile likelihood
+Rp <- Vectorize(function(theta)  theta^t*(1-theta)^(n-t)/( theta.hat^t*(1-theta.hat)^(n-t) ))
+
+# Lambda function
+Lambda <-  Vectorize( function(theta) -2*log(Rp(theta)) )
+
+#----------------------------------------
+# Wald approximation function for theta
+#-----------------------------------------
+
+hess.theta <-  hessian(Lambda , x = theta.hat)
+
+# Threshold
+lev <- 2*qchisq(0.95, df = 1)/hess.theta
+lev
+
+W.theta = Vectorize( function(theta) return( (theta-theta.hat)^2 ))
+# Visualising the profile likelihood of sigma
+curve(W.theta,0,1, n = 1000, lwd =3, col = "blue", cex.axis = 2, cex.lab = 1.5, main =  expression(paste("Wald function of ", theta), ylim = c(0,1)),
+      xlab = ~theta, ylab = "Wald")
+abline(h = lev, lwd = 2, col = "red")
+abline(v = theta.hat, lwd = 2, col = "purple", lty = 2)
+
+# 95% Confidence interval
+W.thetaC = Vectorize( function(theta) return(W.theta(theta)-lev))
+
+c(uniroot(W.thetaC,c(0.1,0.3))$root,uniroot(W.thetaC,c(0.3,0.6))$root)
+
+
+
+################################################################################################
+# Wald: Exponential case
+################################################################################################
+
+# Example 1
+rm(list = ls())
+
+# Data
+set.seed(123)
+x <- rexp(n = 10, rate = 1)
+x.bar <- mean(x)
+n <- length(x)
+theta.hat <- x.bar
+theta.hat
+
+# Profile likelihood
+Rp <- Vectorize(function(theta)  ( exp(-n*x.bar/theta)/theta^n )/( exp(-n*x.bar/theta.hat)/theta.hat^n )  )
+
+# Lambda function
+Lambda <-  Vectorize( function(theta) -2*log(Rp(theta)) )
+
+#----------------------------------------
+# Wald approximation function for theta
+#-----------------------------------------
+
+hess.theta <-  hessian(Lambda , x = theta.hat)
+
+# Threshold
+lev <- 2*qchisq(0.95, df = 1)/hess.theta
+lev
+
+W.theta = Vectorize( function(theta) return( (theta-theta.hat)^2 ))
+# Visualising the profile likelihood of sigma
+curve(W.theta,0,1.5, n = 1000, lwd =3, col = "blue", cex.axis = 2, cex.lab = 1.5, main =  expression(paste("Wald function of ", theta), ylim = c(0,1)),
+      xlab = ~theta, ylab = "Wald")
+abline(h = lev, lwd = 2, col = "red")
+abline(v = theta.hat, lwd = 2, col = "purple", lty = 2)
+
+# 95% Confidence interval
+W.thetaC = Vectorize( function(theta) return(W.theta(theta)-lev))
+
+c(uniroot(W.thetaC,c(0.1,0.6))$root,uniroot(W.thetaC,c(0.7,1.3))$root)
+
+
+
+# Example 2
+rm(list = ls())
+
+# Data
+set.seed(123)
+x <- rexp(n = 100, rate = 1)
+x.bar <- mean(x)
+n <- length(x)
+theta.hat <- x.bar
+theta.hat
+
+# Profile likelihood
+Rp <- Vectorize(function(theta)  ( exp(-n*x.bar/theta)/theta^n )/( exp(-n*x.bar/theta.hat)/theta.hat^n )  )
+
+# Lambda function
+Lambda <-  Vectorize( function(theta) -2*log(Rp(theta)) )
+
+#----------------------------------------
+# Wald approximation function for theta
+#-----------------------------------------
+
+hess.theta <-  hessian(Lambda , x = theta.hat)
+
+# Threshold
+lev <- 2*qchisq(0.95, df = 1)/hess.theta
+lev
+
+W.theta = Vectorize( function(theta) return( (theta-theta.hat)^2 ))
+# Visualising the profile likelihood of sigma
+curve(W.theta,0,2, n = 1000, lwd =3, col = "blue", cex.axis = 2, cex.lab = 1.5, main =  expression(paste("Wald function of ", theta), ylim = c(0,1)),
+      xlab = ~theta, ylab = "Wald")
+abline(h = lev, lwd = 2, col = "red")
+abline(v = theta.hat, lwd = 2, col = "purple", lty = 2)
+
+# 95% Confidence interval
+W.thetaC = Vectorize( function(theta) return(W.theta(theta)-lev))
+
+c(uniroot(W.thetaC,c(0.5,1.0))$root,uniroot(W.thetaC,c(1.0,1.5))$root)
+
+```

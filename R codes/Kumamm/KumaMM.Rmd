@@ -1,0 +1,108 @@
+---
+title: "Method of moments for the Kumaraswamy distribution"
+author: '[Francisco Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Method of moments for the Kumaraswamy distribution
+
+Let ${\bf X}=(X_1,\dots, X_n)$ be *i.i.d.* random variables with Kumaraswamy distribution with parameters $a>0$ and $b>0$. The probability density function of the Kumaraswamy distribution is
+$$f(x;a,b)=abx^{{a-1}}{(1-x^{a})}^{{b-1}},\,\,\,\,\,\,{\mbox{where}}\,\,\, x\in [0,1].$$
+The mean and variance of this distribution are
+$$ \mu_1 = E[X] = {\frac  {b\Gamma (1+{\tfrac  {1}{a}})\Gamma (b)}{\Gamma (1+{\tfrac  {1}{a}}+b)}},$$
+$$Var[X] = E[X^2] - E[X]^2 = \mu_2 -\mu_1^2 = {\frac  {b\Gamma (1+2/a)\Gamma (b)}{\Gamma (1+b+2/a)}} - \mu_1^2.$$
+The MME of $a$ and $b$, $\tilde{a}$ and $\tilde{b}$, are the solution to the system of non-linear equations,
+$$ \bar{{\bf X}} = {\frac  {b\Gamma (1+{\tfrac  {1}{a}})\Gamma (b)}{\Gamma (1+{\tfrac  {1}{a}}+b)}},$$
+$$\frac{1}{n}\sum_{i=1}^{n}X_i^2 - \bar{{\bf X}}^2 = {\frac  {b\Gamma (1+2/a)\Gamma (b)}{\Gamma (1+b+2/a)}} - \mu_1^2.$$
+which cannot be found in closed form. Thus, we can only obtain the MME using numerical methods. The following R code shows how to calculate the MME numerically.
+
+```{r}
+rm(list = ls()) # Delete memory
+
+#------------------------------------------------------------------
+# Moments of order n of the Kumaraswamy(a,b) distribution
+# https://en.wikipedia.org/wiki/Kumaraswamy_distribution
+#------------------------------------------------------------------
+mn <- function(a,b,n){
+  log.num <- log(b) + lgamma(1 + n/a) + lgamma(b)
+  log.den <- lgamma(1 + b + n/a)
+  return(exp(log.num-log.den))
+}
+
+#--------------------------------
+# Method of Moments Estimates
+#--------------------------------
+library(nleqslv) # Required packages
+
+# Function containing the implementation of the MME
+# It solves a system of nonlinear equations 
+
+MME <- function(data){
+  x.bar <- mean(data)
+  x2.bar <- mean(data^2)
+  
+  fn <- function(par){
+    mom1 <- mn(exp(par[1]),exp(par[2]),1) - x.bar
+    mom2 <- mn(exp(par[1]),exp(par[2]),2) - mn(exp(par[1]),exp(par[2]),1)^2 - x2.bar + x.bar^2
+    return(c(mom1,mom2))
+  }
+  
+  est <- as.vector(exp(nleqslv(c(0,0), fn)$x))
+  
+  return(est)
+  
+}
+
+###############################################################################
+# Examples
+###############################################################################
+
+#--------------------------------
+# Example 1
+#--------------------------------
+a0 <- 1
+b0 <- 1
+ns <- 1000
+
+# Simulation of Kumaraswamy distributed data
+set.seed(123)
+dat <- (rbeta(ns, shape1 = 1, shape2 = b0))^(1/a0)
+
+# MME
+MME(dat)
+
+#--------------------------------
+# Example 2
+#--------------------------------
+a0 <- 0.5
+b0 <- 2
+ns <- 1000
+
+# Simulation of Kumaraswamy distributed data
+set.seed(123)
+dat <- (rbeta(ns, shape1 = 1, shape2 = b0))^(1/a0)
+
+# MME
+MME(dat)
+
+#--------------------------------
+# Example 3
+#--------------------------------
+a0 <- 5
+b0 <- 3
+ns <- 1000
+
+# Simulation of Kumaraswamy distributed data
+set.seed(123)
+dat <- (rbeta(ns, shape1 = 1, shape2 = b0))^(1/a0)
+
+# MME
+MME(dat)
+```
+
+

@@ -1,0 +1,181 @@
+---
+title: "$t$-intervals: unpaired observations"
+author: '[Francisco Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Life spans of wild type vs. transgenic mosquitoes
+
+Example based on [Joseph C. Watkins](https://www.math.arizona.edu/~jwatkins/).  The life span in days of 88 wildtype and 99 transgenic mosquitoes is given in the following data set.
+
+## $t-$interval assuming equal variance
+
+```{r}
+# Required package
+library(ggplot2)
+
+# Reading the data online
+mosquitoes<-read.delim("https://www.math.arizona.edu/~jwatkins//mosquitoes.txt")
+
+# Displaying the data
+# See also: http://rpubs.com/FJRubio/TwoSamplesVT
+boxplot(mosquitoes)
+
+# First sample
+X <- mosquitoes[!is.na(mosquitoes[,1]),1]
+m <- length(X)
+m
+var(X)
+summary(X)
+
+# Second sample
+Y <- mosquitoes[!is.na(mosquitoes[,2]),2]
+n <- length(Y)
+n
+var(Y)
+summary(Y)
+
+# Violin plots of the two populations
+df <- reshape2::melt(data.frame(cbind(X,Y)), id.vars = NULL)
+vp <- ggplot(df, aes(x = variable, y = value)) + geom_violin(scale="width",adjust = 1,width = 0.5,fill = "grey80") + geom_boxplot(width=0.075,fatten = 3) +
+  theme_bw() + xlab("Data") + ylab("Density") + theme(axis.text.x = element_text(size = 14), axis.text.y = element_text(size = 14)) +
+  theme(axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) + 
+  stat_summary(fun.y = mean, colour = c("red","blue"), geom="point", shape=18, size=4) +
+  scale_x_discrete(labels = c("Wildtype", "Transgenic"))
+vp 
+
+# Pooled variance
+Sp2 <- ((m-1)*var(X) + (n-1)*var(Y))/(m+n-2)
+Sp2
+
+# t-interval : equal variance
+
+Int <- c( mean(X) - mean(Y) - qt(0.99,df=m+n-2)*sqrt(Sp2)*sqrt(1/m+1/n), mean(X) - mean(Y) + qt(0.99,df=m+n-2)*sqrt(Sp2)*sqrt(1/m+1/n))
+
+library(knitr)
+kable(Int,digits = 4)
+```
+
+## $t-$interval using Welch and Satterthwaite's approximation
+```{r}
+library(knitr)
+# Reading the data online
+mosquitoes<-read.delim("https://www.math.arizona.edu/~jwatkins//mosquitoes.txt")
+
+# Displaying the data
+boxplot(mosquitoes)
+
+# First sample
+X <- mosquitoes[!is.na(mosquitoes[,1]),1]
+m <- length(X)
+
+# Second sample
+Y <- mosquitoes[!is.na(mosquitoes[,2]),2]
+n <- length(Y)
+
+# Effective degrees of freedom
+nu <- (var(X)/m + var(Y)/n)^2/( var(X)^2/(m^2*(m-1)) + var(Y)^2/(n^2*(n-1)) )
+kable(nu,digits = 4)
+
+# Studentised variance
+SV <- var(X)/m + var(Y)/n
+
+# t-interval : equal variance
+
+Int <- c( mean(X) - mean(Y) - qt(0.975,df=nu)*sqrt(SV), mean(X) - mean(Y) + qt(0.975,df=nu)*sqrt(SV))
+
+kable(Int,digits = 4)
+
+
+# Calculating this same interval using the command t-test
+t.test(X,Y,conf.level=0.95)$ conf.int
+```
+
+Both approaches give similar results in this case, although the second approach produces a confidence interval that is farther from zero.
+
+# Test of Significance
+
+Consider testing a difference in the mean life span. This is
+
+$$H_0: \mu_1 =  \mu_2 \,\,\,\,\,\, vs. \,\,\,\,\,\, H_1: \mu_1 \neq \mu_2$$
+
+
+```{r}
+library(knitr)
+# Reading the data online
+mosquitoes<-read.delim("https://www.math.arizona.edu/~jwatkins//mosquitoes.txt")
+
+# Displaying the data
+boxplot(mosquitoes)
+
+# First sample
+X <- mosquitoes[!is.na(mosquitoes[,1]),1]
+m <- length(X)
+
+# Second sample
+Y <- mosquitoes[!is.na(mosquitoes[,2]),2]
+n <- length(Y)
+
+# Effective degrees of freedom
+nu <- (var(X)/m + var(Y)/n)^2/( var(X)^2/(m^2*(m-1)) + var(Y)^2/(n^2*(n-1)) )
+kable(nu,digits = 4)
+
+# Studentised variance
+SV <- var(X)/m + var(Y)/n
+
+# t-statistic
+t0 <- (mean(X) - mean(Y))/sqrt(SV)
+
+
+# P-value
+P <- pt(-t0 , df = nu) + 1-pt(t0 , df = nu)
+kable(P,digits = 4)
+
+# Calculating the p-value the command t-test
+t.test(X,Y,conf.level=0.95, alternative = "two.sided")
+
+```
+
+
+We now want to test if the transgenic modification of the mosquitoes reduces the mean life span. This is
+
+$$H_0: \mu_1 \leq  \mu_2 \,\,\,\,\,\, vs. \,\,\,\,\,\, H_1: \mu_1 > \mu_2$$
+
+
+```{r}
+library(knitr)
+# Reading the data online
+mosquitoes<-read.delim("https://www.math.arizona.edu/~jwatkins//mosquitoes.txt")
+
+# First sample
+X <- mosquitoes[!is.na(mosquitoes[,1]),1]
+m <- length(X)
+
+# Second sample
+Y <- mosquitoes[!is.na(mosquitoes[,2]),2]
+n <- length(Y)
+
+# Effective degrees of freedom
+nu <- (var(X)/m + var(Y)/n)^2/( var(X)^2/(m^2*(m-1)) + var(Y)^2/(n^2*(n-1)) )
+kable(nu,digits = 4)
+
+# Studentised variance
+SV <- var(X)/m + var(Y)/n
+
+# t-statistic
+t0 <- (mean(X) - mean(Y))/sqrt(SV)
+
+
+# P-value
+P <-  1-pt(t0 , df = nu)
+kable(P,digits = 4)
+
+# Calculating the p-value the command t-test
+t.test(X,Y,conf.level=0.95, alternative = "greater")
+```
+

@@ -1,0 +1,83 @@
+---
+title: "Robust Outlier Detection"
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "29/11/2018"
+output: html_document
+---
+
+# Comparison of two methods for outlier detection in a simple example.
+
+**References**
+
+  1. [Robust Statistics](https://onlinelibrary.wiley.com/doi/book/10.1002/9780470434697)
+  
+  2. [Detecting outliers: Do not use standard deviation around the mean, use absolute deviation around the median](https://doi.org/10.1016/j.jesp.2013.03.013)
+
+
+# Robust outlier detection
+```{r}
+##################################################################################################
+# Robust outlier detection
+# Location estimated with the median
+# Scale estimated with the normalised mean absolute deviation
+##################################################################################################
+rm(list=ls())
+
+# Normalised Median Absolute Deviation
+b <- 1/qnorm(0.75) # Normalisation constant
+NMAD <- function(data)  b*median( abs(data - median(data)))
+
+# Data (guess which entries are outliers by eye)
+data <- c(3, 5, 5, 7, 9, 11, 11, 1000)
+
+# Number of NMADS from the Median
+a <- 3
+
+# NMAD and Median
+NMAD.data <- NMAD(data)
+med <- median(data)
+
+c(med,NMAD.data)
+
+# Robust outlier detection
+Rob.Out.detect <- Vectorize(function(x){
+  val <- abs((x - med)/NMAD.data)
+  return(ifelse(val>a, TRUE, FALSE))
+}  )
+
+# Identifying outliers in the data with the robust method
+cbind.data.frame(data,Rob.Out.detect(data))
+```
+
+
+# Non-Robust outlier detection
+```{r}
+##################################################################################################
+# Non-Robust outlier detection
+# Location estimated with the mean
+# Scale estimated with the standard deviation
+##################################################################################################
+
+
+# Sample standard deviation
+s.sigma <- function(data) sqrt( mean((data - mean(data))^2) )
+
+# Number of SDs from the Mean
+a <- 3
+
+# Mean and standard deviation
+mean.data <- mean(data)
+sd.data <- s.sigma (data)
+
+c(mean.data,sd.data)
+
+# Non-Robust outlier detection
+Out.detect <- Vectorize(function(x){
+  val <- abs((x - mean.data)/sd.data)
+  return(ifelse(val>a, TRUE, FALSE))
+}  )
+
+# Identifying outliers in the data with the non-robust method
+cbind.data.frame(data,Out.detect(data))
+```
+

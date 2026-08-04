@@ -1,0 +1,167 @@
+---
+title: 'Binomial Trial: Bayesian Analysis'
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "25/11/2018"
+output: html_document
+---
+
+## A Bayesian Analysis of a Binomial Trial
+
+Suppose that we are interested in estimating the proportion of responders to a new treatment for a serious disease. The company that developed the treatment is allowed to run a trial for the first time on $n=10$ (human) patients. You are the Statistician responsible for analysing the results of the trial. For illustrative purposes, consider the following scenarios:
+
+ 1. You decide to use a MLE approach to estimate $\theta$, the probability of success.
+ 2. You decide to use the Jeffreys prior, since you think that it is non-informative (in what sense?). This is, you use a prior distribution $\theta \sim Beta(1/2,1/2)$.
+ 3. You decide to use a flat priors, since this prior is non-informative. (in what sense?) This is, you use a prior distribution $\theta \sim Beta(1,1)$.
+ 4. The team of Pharmaceutical scientists that developed the drug tell you that they are very optimistic about this drug and that, based on previous experiments on mice, they expect the drug to be successful in average on $75\%$ of the cases, and they are certain that the probability of success should be higher than $60\%$. They also acknowledge that due to genetic variability, the drug may not work in $10\%$ of the patients, so the probability of success is lower than $90\%$. If you use this information, you can construct a prior by trying different values of the Beta distribution to match this information. First, the mean is $\dfrac{a_0}{a_0+b_0} = 0.75$, then $a_0 = 3b_0$. Then, you play with the values of the parameters until you obtain that $90\%$ of the mass of the prior distribution is cumulated between $(0.6,0.90)$. This is,
+$$\int_{0.6}^{0.9}\pi_{\Theta}(\theta\mid a_0,b_0) d\theta \approx 0.90.$$
+After some tests, you obtain $a_0 = 15$ and $b_0 = 5$. This is an \emph{informative} prior (in the sense that it incorporates the information from the experts).
+
+```{r}
+rm(list=ls())
+
+##############################################################################
+# Priors
+##############################################################################
+
+# Testing the parameters for the informative prior
+b0 <- 5
+a0 <- 3*b0
+
+pbeta(0.9, a0, b0) - pbeta(0.6, a0, b0)
+
+# Priors
+prior.inf <- Vectorize(function(t) dbeta(t,a0,b0)) # informative
+prior.j <- Vectorize(function(t) dbeta(t,0.5,0.5)) # Jeffreys
+prior.u <- Vectorize(function(t) dbeta(t,1,1)) # uniform
+
+# Plots of the priors
+curve(prior.inf, 0,1, n= 1000, lwd = 2, cex.axis = 1.5, xlab= ~theta, ylab = "Density", main = "Priors", col = "black", cex.lab = 1.5)
+curve(prior.j, 0,1, n= 1000, lwd = 2, cex.axis = 1.5, xlab= ~theta, ylab = "Density", main = "Priors", col = "red", add = T)
+curve(prior.u, 0,1, n= 1000, lwd = 2, cex.axis = 1.5, xlab= ~theta, ylab = "Density", main = "Priors", col = "blue", add = T)
+# Add a legend
+legend(0.35, 4.25, legend=c("Informative", "Jeffreys", "Uniform"),
+       col=c("black","red", "blue"), lty=1, cex=1)
+
+```
+
+
+Suppose that the company runs the experiment and they obtain that $x = 3$ patients out of $n=10$ are responders (successes), and $n-x=7$ are non-responders. What are the posteriors distributions for each prior choice? 
+
+  1. No posterior.
+  2. $Beta(3.5,7.5)$. 
+  3. $Beta(4,8)$ 
+  4. $Beta(18,12)$.
+
+```{r}
+##############################################################################
+# Posteriors 
+##############################################################################
+
+# Testing the parameters for the informative prior
+n <- 10
+x <- 3
+
+# Priors
+posterior.inf <- Vectorize(function(t) dbeta(t,x+a0,n-x+b0)) # informative
+posterior.j <- Vectorize(function(t) dbeta(t,x+0.5,n-x+0.5)) # Jeffreys
+posterior.u <- Vectorize(function(t) dbeta(t,x+1,n-x+1)) # uniform
+
+# Plots of the priors
+curve(posterior.inf, 0,1, n= 1000, lwd = 2, cex.axis = 1.5, xlab= ~theta, ylab = "Density", main = "Posteriors", col = "black", cex.lab = 1.5)
+curve(posterior.j, 0,1, n= 1000, lwd = 2, cex.axis = 1.5, xlab= ~theta, ylab = "Density", main = "Posteriors", col = "red", add = T)
+curve(posterior.u, 0,1, n= 1000, lwd = 2, cex.axis = 1.5, xlab= ~theta, ylab = "Density", main = "Posteriors", col = "blue", add = T)
+# Add a legend
+legend(0.75, 4.5, legend=c("Informative", "Jeffreys", "Uniform"),
+       col=c("black","red", "blue"), lty=1, cex=1)
+```
+
+Now, suppose that you decide to use the posterior mean as a point estimator. What are the point estimators and the posterior variances for each prior choice? Include the MLE and its variance.
+
+```{r}
+##############################################################################
+# Posterior Means and MLE 
+##############################################################################
+library(knitr)
+
+# Mean and variance of the Beta distribution
+# a, b : shape parameters
+MeanBeta <- function(a,b) a/(a+b)
+VarianceBeta <- function(a,b) (a*b)/((a+b)^2*(a+b+1))
+
+MLE <- x/n
+PM.inf <- MeanBeta(x+a0,n-x+b0)
+PM.j <- MeanBeta(x+0.5,n-x+0.5)
+PM.u <- MeanBeta(x+1,n-x+1)
+
+Estimators <- c(MLE, PM.inf, PM.j, PM.u)
+Variances <- c(x*(n-x)/(n^3), VarianceBeta(x+a0,n-x+b0), VarianceBeta(0.5+x,n-x+0.5), VarianceBeta(1+x,n-x+1))
+tab <- rbind(Estimators,Variances)
+colnames(tab) <- c("Frequentist", "Informative", "Jeffreys", "Uniform")
+kable(tab)
+```
+
+Suppose that these results are used as an initial trial in order to predict the results in a new trial now involving $n^{\star} = 100$ patients. What is the predictive distribution associated to each prior? The predictive distribution is Beta-Binomial distribution distribution with parameters given by the hyperparameters of each prior. Note that, in the frequentist scenario, prediction can only be done by using the ``fitted model'', which is a Binomial distribution for $n^{\star} = 100$ trials and probability of success $\widehat{\theta}$. This approach ignores the uncertainty about the parameter.
+
+```{r}
+##############################################################################
+# Predictive distributions
+##############################################################################
+
+# Beta Binomial Predictive distribution function
+BetaBinom <- Vectorize(function(xp){
+  log.val <- lchoose(np, xp) + lbeta(xp+a+x,b+n-x+np-xp) - lbeta(a+x,b+n-x)
+  return(exp(log.val))
+})
+
+# Frequentist
+np <- 100
+plot(0:100,dbinom(0:100, size = np, prob = MLE),type="b",xlab="x*",ylab="P(X=x*|Data)", main = "Frequentist predictive",cex.axis= 1.5,cex.lab=1.5,lwd=4)
+
+
+# Informative
+n <- 10; x <- 3; np <- 100; a <- a0; b <- b0;
+plot(0:np,BetaBinom(0:np),type="b",xlab="x*",ylab="P(X=x*|Data)", main = "Posterior predictive: a0=15, b0=5",cex.axis= 1.5,cex.lab=1.5,lwd=4)
+
+# Jeffreys
+n <- 10; x <- 3; np <- 100; a <- 0.5; b <- 0.5;
+plot(0:np,BetaBinom(0:np),type="b",xlab="x*",ylab="P(X=x*|Data)", main = "Posterior predictive: a0=0.5, b0=0.5",cex.axis= 1.5,cex.lab=1.5,lwd=4)
+
+# Uniform
+n <- 10; x <- 3; np <- 100; a <- 1; b <- 1;
+plot(0:np,BetaBinom(0:np),type="b",xlab="x*",ylab="P(X=x*|Data)", main = "Posterior predictive: a0=1, b0=1",cex.axis= 1.5,cex.lab=1.5,lwd=4)
+
+
+# Overplot
+np <- 100
+plot(0:100,dbinom(0:100, size = np, prob = MLE),type="b",xlab="x*",ylab="P(X=x*|Data)", main = "Predictive",cex.axis= 1.5,cex.lab=1.5,lwd=4)
+n <- 10; x <- 3; np <- 100; a <- a0; b <- b0;
+points(0:np,BetaBinom(0:np),type="b", col = "red")
+n <- 10; x <- 3; np <- 100; a <- 0.5; b <- 0.5;
+points(0:np,BetaBinom(0:np),type="b", col = "blue")
+n <- 10; x <- 3; np <- 100; a <- 1; b <- 1;
+points(0:np,BetaBinom(0:np),type="b",col = "green")
+# Add a legend
+legend(60,0.08,legend=c("Frequentist","Informative", "Jeffreys", "Uniform"),
+       col=c("black","red", "blue", "green"), lty=1, cex=1)
+
+```
+
+Calculate the $95\%$ quantile posterior credible intervals for $\theta$. Note that these intervals can be constructed using the quantiles of a Beta distribution, which is already implemented in R. Report also the $95\%$ confidence interval for $\theta$. Recall that the interpretation of confidence intervals is different from that of credible intervals.
+
+
+```{r}
+##############################################################################
+# Credible intervals 
+##############################################################################
+library(knitr)
+
+freq.CI <- c( MLE - 1.96*sqrt(x*(n-x)/(n^3)), MLE + 1.96*sqrt(x*(n-x)/(n^3)) )
+Q.inf <- c(qbeta(0.025,x+a0,n-x+b0), qbeta(0.975,x+a0,n-x+b0))
+Q.j <- c(qbeta(0.025,x+0.5,n-x+0.5),qbeta(0.975,x+0.5,n-x+0.5))
+Q.u <- c(qbeta(0.025,x+1,n-x+1),qbeta(0.975,x+1,n-x+1))
+
+Intervals <- cbind(freq.CI, Q.inf, Q.j, Q.u)
+colnames(Intervals) <- c("Frequentist", "Informative", "Jeffreys", "Uniform")
+rownames(Intervals) <- c("L","U")
+kable(Intervals)
+```

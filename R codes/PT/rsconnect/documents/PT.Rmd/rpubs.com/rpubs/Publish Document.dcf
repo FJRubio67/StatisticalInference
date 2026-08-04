@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/449415/575b5daa56934f42ae8ef28f4c23ca86
+bundleId: https://api.rpubs.com/api/v1/document/449415/575b5daa56934f42ae8ef28f4c23ca86
+url: http://rpubs.com/FJRubio/449415
+when: 1544481775.84401

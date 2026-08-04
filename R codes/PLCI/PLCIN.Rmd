@@ -1,0 +1,87 @@
+---
+title: "Profile likelihood confidence intervals"
+author: '[Francisco Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Profile likelihood confidence intervals for the parameters of the normal distribution
+
+Let ${\bf x} = (x_1,\dots,x_n)$ be a sample from a distribution with density $f(\cdot;\boldsymbol{\theta})$. Suppose that $\boldsymbol{\theta} = (\boldsymbol{\delta},\boldsymbol{\xi})$, where $\boldsymbol{\delta}$ is a parameter of interest, and $\boldsymbol{\xi}$ is a nuisance parameters. Let:
+$$
+L(\boldsymbol{\theta}\mid {\bf x}) = L(\boldsymbol{\delta},\boldsymbol{\xi} \mid {\bf x}) = \prod_{i=1}^{n} f(x_i;\boldsymbol{\theta}),
+$$
+be the likelihood function of $\boldsymbol{\theta}$. Let $\widehat{\boldsymbol{\theta}} = (\widehat{\boldsymbol{\delta}},\widehat{\boldsymbol{\xi}})$ be the MLE of $\boldsymbol{\theta}$. Then, the profile likelihood (or profile likelihood ratio) of $\boldsymbol{\delta}$ is:
+$$
+R(\boldsymbol{\delta}\mid {\bf x}) = \dfrac{L(\boldsymbol{\delta},\widehat{\boldsymbol{\xi}}(\boldsymbol{\delta}) \mid {\bf x})}{L(\widehat{\boldsymbol{\theta}}\mid {\bf x})} = \dfrac{\max_{\boldsymbol{\xi}} L(\boldsymbol{\delta},\boldsymbol{\xi} \mid {\bf x}) }{\max_{\boldsymbol{\theta}}L({\boldsymbol{\theta}}\mid {\bf x})},
+$$
+where $\max_{\xi} L(\boldsymbol{\delta},\boldsymbol{\xi} \mid {\bf x})$ means that we are maximising the likelihood with respect to $\boldsymbol{\xi}$, for a fixed value of $\boldsymbol{\delta}$. Then, profile likelihood is bounded $0<R(\boldsymbol{\delta}\mid {\bf x})\leq 1$.
+
+# Profile likelihood for $\sigma$
+The profile likelihood for $\sigma$ is:
+$$R(\sigma)=\dfrac{\max_{\mu}L(\mu,\sigma)}{L(\widehat{\mu},\widehat{\sigma})} = \left(\dfrac{\widehat{\sigma}}{\sigma}\right)^n\exp\left[\dfrac{n}{2}\left(1-\left(\dfrac{\widehat{\sigma}}{\sigma}\right)^2\right)\right].$$
+
+The following R code shows how to obtain an approximate $95\%$ confidence interval based on this profile likelihood.
+
+```{r}
+# Delete memory
+rm(list = ls())
+
+# Simulated data from a normal with mean zero and variance 1
+set.seed(123)
+data = rnorm(n = 30, 0, 1 )
+n = length(data)
+s = sqrt(mean((data-mean(data))^2))
+x.bar <- mean(data)
+# MLE
+MLE <- c(x.bar,s)
+MLE
+
+# Profile likelihood of sigma
+R.sigma = Vectorize( function(sigma) return( (s/sigma)^n*exp( 0.5*n*(1-(s/sigma)^2)) ) )
+# Visualising the profile likelihood of sigma
+curve(R.sigma,0,2, n = 1000, lwd =3, col = "blue", cex.axis = 2, cex.lab = 1.5, main =  expression(paste("Profile likelihood of ", sigma), ylim = c(0,1)),
+      xlab = ~sigma, ylab = "Profile")
+abline(h = 0.147, lwd = 2, col = "red")
+abline(v = MLE[2], lwd = 2, col = "purple", lty = 2)
+# 95% Confidence interval
+R.sigmaC = Vectorize( function(sigma) return(R.sigma(sigma)-0.147))
+
+c(uniroot(R.sigmaC,c(0.6,0.8))$root,uniroot(R.sigmaC,c(1.1,1.5))$root)
+```
+
+# Profile likelihood for $\mu$
+The profile likelihood for $\mu$ is:
+
+$$R(\mu)=\dfrac{\max_{\sigma}L(\mu,\sigma)}{L(\widehat{\mu},\widehat{\sigma})} = \left(\dfrac{\widehat{\sigma}}{\widehat{\sigma}(\mu)}\right)^n = \left( \dfrac{\sum_{i=1}^n(x_i-\bar x)^2}{\sum_{i=1}^n(x_i-\mu)^2} \right)^{\frac{n}{2}}.$$
+```{r}
+# Delete memory
+rm(list = ls())
+
+# Simulated data from a normal with mean zero and variance 1
+set.seed(123)
+data = rnorm(n = 30, 0, 1 )
+n = length(data)
+s = sqrt(mean((data-mean(data))^2))
+x.bar <- mean(data)
+# MLE
+MLE <- c(x.bar,s)
+MLE
+
+# Profile likelihood of mu
+R.mu = Vectorize( function(mu) return(  ( sum((data-x.bar)^2)/sum((data-mu)^2) )^(0.5*n)  ))
+# Visualising the profile likelihood of mu
+curve(R.mu,-1,1, n = 1000, lwd =3, col = "blue", cex.axis = 2, cex.lab = 1.5, 
+      main =  expression(paste("Profile likelihood of ", mu)), xlab = ~mu, ylab = "Profile", ylim = c(0,1))
+abline(h = 0.147, lwd = 2, col = "red", lty = 2)
+abline(v = MLE[1], lwd = 2, col = "purple", lty = 2)
+
+# 95% Confidence interval
+R.muC = Vectorize( function(mu) return(R.mu(mu)-0.147))
+
+c(uniroot(R.muC,c(-0.8,0))$root,uniroot(R.muC,c(0.1,0.8))$root)
+```

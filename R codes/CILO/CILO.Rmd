@@ -1,0 +1,158 @@
+---
+title: "Performance of normal CIs for log-odds"
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: html_document
+---
+
+## A simulation study to check the performance of asymptotic normal CIs for the log-odds
+> ``Knew that we ventured on such dangerous seas That if we wrought out life 'twas ten to one'' --William Shakespeare,
+
+Let $X$ be a random variable with binomial distribution with $n$ trials and $\theta\in(0,1)$ probability of success. The MLE of $\theta$, $\widehat{\theta} = \dfrac{X}{n}$, $E[\widehat{\theta}] = \theta$, $Var[\widehat{\theta}] = \frac{\theta(1-\theta)}{n}$. We know that the MLE is consistent and asymptotically normal.
+
+A parameter of interest is the log-odds, which is the logarithm of the odds:
+$$\varphi(\theta) = \log\left( \dfrac{\theta}{1-\theta} \right).$$
+This function is also known as the \emph{logit} function.
+The aim now is to construct a $100\gamma\%$ CI for $\varphi(\theta)$, using the consistent estimator $\varphi(\widehat{\theta})$ and the plug-in principle. It is easy to check that $g'(\widehat{\theta}) = \dfrac{1}{\widehat{\theta}(1-\widehat{\theta})}$. Then, a $100\gamma\%$ confidence interval for $\varphi(\theta)$ can be obtained as
+$$
+\varphi(\widehat{\theta}_n) -  \dfrac{Z_{\frac{1+\gamma}{2}}}{\sqrt{n \widehat{\theta}(1-\widehat{\theta})}} < \varphi(\theta) < \varphi(\widehat{\theta}_n) +  \dfrac{Z_{\frac{1+\gamma}{2}}}{\sqrt{n \widehat{\theta}(1-\widehat{\theta})}}.
+$$
+The following R code presents a simulation study to assess the confidence level of asymptotic normal confidence intervals of level $95\%$. The idea is, for $i=1,\dots,N$
+  1. Simulate a binomial sample $x_i$ with $n$ trials and $\theta_0$ probability of success,
+  2. Calculate the confidence interval for the log-odds for this sample,
+  3. Check whether or not that confidence interval contains the true value of the parameter $\theta_0$. 
+
+Finally, check the proportion of confidence intervals that contain the true value of the parameter. This is a Monte Carlo approximation of the confidence of those confidence intervals (for that sample size $n$ and parameter $\theta_0$). We will do the simulation study for $\theta_0=0.1, 0.2,\dots,0.9$ and $n=5,10,30,50,100,250,1000$.
+
+Recall that, the closer the inclusion proportion to the nominal value ($0.95$), the better the normal approximation. We also show the proportion of intervals that are undefined ($\widehat{\theta}=0,1$) for each sample size.
+
+# Simulation Study I: Excluding undefined intervals and counting the proportion of undefined intervals
+
+```{r}
+# Clear memory
+rm(list = ls())
+# True value of the parameter
+theta <- seq(0.1, 0.9, by = 0.1)
+# Sample sizes
+ns <- c(5,10,30,50,100,250,500,1000)
+# Matrix of proportions of true inclusions
+prop.mc <- matrix(0, nrow = length(theta), ncol = length(ns))
+# Matrix of proportions of undefined intervals
+prop.na <- matrix(0, nrow = length(theta), ncol = length(ns))
+# Z_{0.975} 
+Z <- qnorm(0.975)
+# logit function
+logit <- Vectorize(function(t)  log(t/(1-t)))
+
+# Simulation study
+N <- 20000 # Monte Carlo iterations
+
+
+for(j in 1:length(theta)){
+  for(k in 1:length(ns)){
+    inc <- vector() # temporal vector
+    for(i in 1:N){
+      set.seed(i)
+      x <- rbinom(n = 1, size = ns[k], prob = theta[j])
+      theta.hat <- x/ns[k]
+      if(theta.hat>0 & theta.hat < 1){
+        L <- logit(theta.hat) - Z/( sqrt(ns[k]*theta.hat*(1-theta.hat)))
+        U <- logit(theta.hat) + Z/( sqrt(ns[k]*theta.hat*(1-theta.hat)))
+        true.logit <- logit(theta[j])
+        inc[i] <- ifelse(L<= true.logit & U>=true.logit,1,0)
+      }
+      if(theta.hat==0 | theta.hat == 1){
+        inc[i] <- NA
+      }
+    }
+    prop.mc[j,k] <- mean(inc,na.rm = TRUE)
+    prop.na[j,k] <- mean(is.na(inc))
+  }
+}
+
+
+# Required package
+library(knitr)
+
+# Displaying the proportion of intervals that include the true value
+colnames(prop.mc) <- ns
+rownames(prop.mc) <- theta
+
+kable(prop.mc, digits = 4)
+
+
+# Displaying the proportion of intervals with undefined normal approximation
+colnames(prop.na) <- ns
+rownames(prop.na) <- theta
+
+kable(prop.na, digits = 4)
+
+# This table is, in fact, related to the probability of observing 0 and 1 for each scenario
+probs <- matrix(0, nrow = length(theta), ncol = length(ns))
+
+for(j in 1:length(theta)){
+  for(k in 1:length(ns)){
+    probs[j,k] <- dbinom(x = 0, size = ns[k], prob = theta[j]) + dbinom(x = ns[k], size = ns[k], prob = theta[j])
+  }}
+colnames(probs) <- ns
+rownames(probs) <- theta
+
+kable(probs, digits = 4)
+
+```
+
+
+# Simulation Study II: Assigning 0 inclusion of the true value to undefined intervals
+
+```{r}
+# Clear memory
+rm(list = ls())
+# True value of the parameter
+theta <- seq(0.1, 0.9, by = 0.1)
+# Sample sizes
+ns <- c(5,10,30,50,100,250,500,1000)
+# Matrix of proportions of true inclusions
+prop.mc <- matrix(0, nrow = length(theta), ncol = length(ns))
+# Matrix of proportions of undefined intervals
+prop.na <- matrix(0, nrow = length(theta), ncol = length(ns))
+# Z_{0.975} 
+Z <- qnorm(0.975)
+# logit function
+logit <- Vectorize(function(t)  log(t/(1-t)))
+
+# Simulation study
+N <- 20000 # Monte Carlo iterations
+
+
+for(j in 1:length(theta)){
+  for(k in 1:length(ns)){
+    inc <- vector() # temporal vector
+    for(i in 1:N){
+      set.seed(i)
+      x <- rbinom(n = 1, size = ns[k], prob = theta[j])
+      theta.hat <- x/ns[k]
+      if(theta.hat>0 & theta.hat < 1){
+      L <- logit(theta.hat) - Z/( sqrt(ns[k]*theta.hat*(1-theta.hat)))
+      U <- logit(theta.hat) + Z/( sqrt(ns[k]*theta.hat*(1-theta.hat)))
+      true.logit <- logit(theta[j])
+      inc[i] <- ifelse(L<= true.logit & U>=true.logit,1,0)
+      }
+      if(theta.hat==0 | theta.hat == 1){
+        inc[i] <- 0
+      }
+    }
+    prop.mc[j,k] <- mean(inc,na.rm = TRUE)
+    prop.na[j,k] <- mean(is.na(inc))
+  }
+}
+
+# Required package
+library(knitr)
+
+# Displaying the proportion of intervals that include the true value
+colnames(prop.mc) <- ns
+rownames(prop.mc) <- theta
+
+kable(prop.mc, digits = 4)
+
+```

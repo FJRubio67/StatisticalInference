@@ -1,0 +1,74 @@
+---
+title: 'LRT: Poisson'
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "10/03/2019"
+output: html_document
+---
+
+# LRT: Poisson
+
+# $n = 100$
+```{r}
+rm(list=ls())
+# Required packages
+library(sn)
+library(knitr)
+
+indicator = vector()
+n <- 100
+lambda0 <- 1
+
+for(i in 1:10000){
+  # Simulated data
+  set.seed(i)
+  data.sim <- rpois(n,1)
+  
+  # LR test statistic
+  barx <- mean(data.sim)
+  LRT <- 2*n*( (lambda0 - barx) -  barx*log(lambda0/barx) )
+  
+  # 0.95 Quantile of a chi-square with 1 d.f.
+  q <- qchisq(0.95, df = 1)
+  
+  # Outcome from the test
+  indicator[i] <- ifelse(LRT > q, 1, 0)
+}
+
+# Approximate size
+mean(indicator)
+
+```
+
+
+
+# $n = 1000$
+```{r}
+rm(list=ls())
+# Required packages
+library(sn)
+library(knitr)
+
+indicator = vector()
+n <- 1000
+lambda0 <- 1
+
+for(i in 1:10000){
+  # Simulated data
+  set.seed(i)
+  data.sim <- rpois(n,1)
+  
+  # LR test statistic
+  barx <- mean(data.sim)
+  LRT <- 2*n*( (lambda0 - barx) -  barx*log(lambda0/barx) )
+  
+  # 0.95 Quantile of a chi-square with 1 d.f.
+  q <- qchisq(0.95, df = 1)
+  
+  # Outcome from the test
+  indicator[i] <- ifelse(LRT > q, 1, 0)
+}
+
+# Approximate size
+mean(indicator)
+
+```

@@ -1,0 +1,102 @@
+---
+title: 'Paired differences: the Darwin data'
+author: '[Francisco Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# $t$-intervals: paired observations
+Example taken from [1].
+
+"Consider the data $d = (49, -67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, -48)$. These were obtained by Darwin to investigate the difference between cross and self fertilization in plants. They are the differences in height between cross- and self-fertilized pairs of plants in eighths of an inch. They were used by Fisher (1991b, Chapter 3) to illustrate the use of the Student t test on the hypothesis of no difference between cross- and self-fertilized plants $H: \delta = 0$."
+
+**References**
+
+   1. [Statistical Inference in Science](https://www.springer.com/gb/book/9780387950198)
+
+
+```{r}
+# Differences between pairs
+d <- c(49, -67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, -48)
+
+n <- length(d)
+
+# t-interval
+Int <- c(mean(d) - qt(0.975, df = n-1)*sqrt(var(d))/sqrt(n) , mean(d) + qt(0.975, df = n-1)*sqrt(var(d))/sqrt(n) )
+
+library(knitr)
+kable(Int, digits = 4)
+
+# same result using the command t.test
+t.test(d, conf.level = 0.95)$conf.int
+
+```
+
+## Controversy about misclassification in this data set
+
+The left point of this confidence interval is very close to $0$ due to the presence of the two anomalous negative observations $-67, -48$. There is controversy about whether or not these observations were actually misclassified and the role of $X_i$ and $Y_i$ were inadvertently interchanged. Let's explore this idea by changing the sign these observations.
+
+```{r}
+# Differences between pairs
+d <- c(49, 67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, 48)
+
+n <- length(d)
+
+# t-interval
+Int <- c(mean(d) - qt(0.975, df = n-1)*sqrt(var(d))/sqrt(n) , mean(d) + qt(0.975, df = n-1)*sqrt(var(d))/sqrt(n) )
+
+library(knitr)
+kable(Int, digits = 4)
+
+# same result using the command t.test
+t.test(d, conf.level = 0.95)$conf.int
+
+```
+
+# Test of Significance
+
+## Original data
+
+```{r}
+# Differences between pairs
+d <- c(49, -67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, -48)
+n <- length(d)
+
+# Discrepancy measure (t test statistic)
+t0 <- mean(d)/sqrt(var(d)/n)
+
+# P value
+
+P <- pt(-t0, df = n-1) + 1 - pt(t0, df = n-1)
+library(knitr)
+kable(P, digits = 4)
+
+# Same result using the command t.test, fixing the alternative accordingly
+
+t.test(d, alternative = "two.sided" )
+```
+
+## Changing the sign of two observations data
+
+```{r}
+# Differences between pairs
+d <- c(49, 67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, 48)
+n <- length(d)
+
+# Discrepancy measure (t test statistic)
+t0 <- mean(d)/sqrt(var(d)/n)
+
+# P value
+
+P <- pt(-t0, df = n-1) + 1 - pt(t0, df = n-1)
+library(knitr)
+kable(P, digits = 8)
+
+# Same result using the command t.test, fixing the alternative accordingly
+
+t.test(d, alternative = "two.sided" )
+```

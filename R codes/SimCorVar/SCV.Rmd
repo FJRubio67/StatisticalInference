@@ -1,0 +1,117 @@
+---
+title: "Simulation of correlated covariates: implementation and a warning"
+author: '[F. Javier Rubio](https://sites.google.com/site/fjavierrubio67/)'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+bibliography: references.bib
+---
+
+# Simulating correlated covariates
+
+When conducting simulation studies in the context of regression models (see [this link](https://rpubs.com/FJRubio/GHSim) for an example), it is common to simulate normal ``standardised covariates''. This consists of simulating normally distributed vectors, where each entry has mean zero, variance 1, and correlation coefficients $\rho_{ij}$. The correlation matrix is a symmetric (typically) positive-definite $d\times d$ matrix, with $1$s on the diagonal entries, and values $-1 < \rho_{ij} < 1$ on the off-diagonal entries. 
+
+Simulating this sort of random vectors is simple using the R package `mvtnorm`. This only requires defining the correlation matrix as follows.
+
+```{r}
+rm(list=ls())
+
+# Required packages
+library(mvtnorm)
+library(knitr)
+
+# dimension 
+d <- 3
+
+# number of simulations
+n <- 1000
+
+# Correlation matrix
+RHO <- rbind(c(1,0.5,0.75), c(0.5,1,0.25), c(0.75,0.25,1))
+print(RHO)
+
+# Simulation (each row is a simulated vector)
+set.seed(123) # seed
+X <- rmvnorm(n = n, mean = rep(0, d), sigma = RHO)
+
+# sample mean and sample correlation matrix
+colMeans(X)
+
+cor(X)
+```
+
+# A warning
+For simplicity, it is common to assume that the correlation of the random variables is $\rho_{ij} = \rho$ for all $i,j=1,\dots, d$. This is, the correlation matrix is:
+
+$$
+R = \left(\begin{array}{cc} 
+1 & \rho & \dots & \rho\\
+\rho & 1 & \dots & \rho\\
+\dotso & \dots & \dots & \dots\\
+\rho & \rho & \dots & 1\\
+\end{array}\right)
+$$
+A natural question is: when is this matrix positive definite?
+
+**A solution:**
+
+The characteristic polynomial of $R$ is [@hoffman]
+
+$$
+P(\lambda) = \mbox{det} \left( R - \lambda I_d \right).
+$$
+Clearly, a root of this polynomial is $\lambda = 1-\rho$, as this value leads to a matrix $R - \lambda I_d$ with all entries equal to $\rho$, with determinant equal to zero. Then, $\lambda_1 = 1-\rho$ is an eigenvalue (and it is positive).
+
+Moreover, the [geometric multiplicity](https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors#Eigenspaces,_geometric_multiplicity,_and_the_eigenbasis_for_matrices) of $\lambda_1$ is : 
+
+$$ \gamma _{R}(\lambda_1 )=n-\operatorname {rank} (R - \lambda_1 I_d).$$
+Since the $R - \lambda I_d$ is a matrix with all entries equal to $\rho$, then the $\operatorname {rank} (R - \lambda_1 I_d) = 1$. Consequently, the multiplicity of $\lambda_1$ is $d-1$, and there is only one more eigenvalue. We can find the second eigenvalue by using the [property](https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors#Additional_properties_of_eigenvalues):
+
+$$
+\begin{aligned}
+d &= \operatorname {tr} (R)=\sum _{i=1}^{d}R_{ii}=\sum _{i=1}^{d}\lambda _{i}= (d-1)\lambda _{1}+\lambda _{2} \\
+&= (d-1)(1-\rho) + \lambda_2
+\end{aligned}
+$$
+Therefore, $\lambda_2 = d - (d-1)(1-\rho)$. In order for $\lambda_2$ to be positive, we need $d - (d-1)(1-\rho) >0$, which is equivalent to the condition:
+
+$$
+\rho > -\dfrac{1}{d-1}.
+$$
+So, when you simulate (*e.g.* normal) random variables with correlation $R$, you need to take this condition into account. Note that this condition applies to non-normal variables as well.
+
+For $d = 2$, this implies $\rho > -1$; but for $d = 3$, you need $\rho > - 0.5$; and for $d\to \infty$, $\rho >0$.
+
+```{r}
+
+# dimension
+d <- 10
+# Correlation matrix
+rho0 <- -0.25
+RHO <- diag(d) + rho0*(matrix(1, nrow = d, ncol = d) - diag(d))
+print(RHO)
+
+# Determinant is negative!
+det(RHO)
+
+# So, if you try to use this correlation matrix on rmvnorm:
+set.seed(123) # seed
+X <- rmvnorm(n = n, mean = rep(0, d), sigma = RHO)
+
+
+# dimension
+d <- 10
+# Correlation matrix
+rho0 <- -0.1
+RHO <- diag(d) + rho0*(matrix(1, nrow = d, ncol = d) - diag(d))
+print(RHO)
+
+# Determinant is positive
+det(RHO)
+
+```
+
+
+# References
